@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 
-import card
+from card import CardStack, AcePile, PlayStack
+from utils import *
 
-class Layout():
+
+class Layout:
 	"""Represents a solitaire game layout"""
 
 	def __init__(self,deckList):
@@ -12,11 +14,11 @@ class Layout():
 		# Deal cards into seven piles
 		self.cardStacks = [None] * 7
 		for i in range(0,7):
-			cardStacks[i] = CardStack(deckList.popX(i + 1))
-			cardStacks[i][0].flipUp()
+			self.cardStacks[i] = PlayStack(deckList.popX(i + 1))
+			self.cardStacks[i][0].flipUp()
 
 		# Initialize the ace piles
 
 		self.acePiles = [None] * 4
 		for i in range(0,4):
-			acePiles = AcePile()
+			acePiles = AcePile(suitFromNumber(i))
