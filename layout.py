@@ -17,6 +17,8 @@ class SolitaireLayout:
 		self.dimY = -1
 		self.cursorX = 0
 		self.cursorY = 0
+		self.cursorSubY = 0
+		self.cursorSubMax = 0
 		self.message = ''
 
 		# Deal cards into seven piles
@@ -41,43 +43,63 @@ class SolitaireLayout:
 
 
 		# draw deck
-		if len(self.deck.cards) > 0:
-			self.putCardBox(0, 0, '#')
-			if len(self.deck.cards) > 1:
-				self.putCardBox(0, 1, '#')
-				if len(self.deck.cards) > 2:
-					self.putCardBox(0, 2, '#')
+		if self.cursorY == 0 and self.cursorX == 0:
+			color = Fore.GREEN
 		else:
-			self.putCardBox(0, 0)
+			color = Fore.WHITE
+		if len(self.deck.cards) > 0:
+			self.putCardBox(0, 0, '#', color)
+			if len(self.deck.cards) > 1:
+				self.putCardBox(0, 1, '#', color)
+				if len(self.deck.cards) > 2:
+					self.putCardBox(0, 2, '#', color)
+		else:
+			self.putCardBox(0, 0, color = color)
 
 		# draw upDeck
-		if len(self.upDeck.cards) > 2:
-			self.putCard(self.upDeck.cards[0], 11, 0)
-			self.putCard(self.upDeck.cards[1], 13, 2)
-			self.putCard(self.upDeck.cards[2], 15, 4)
-		elif len(self.upDeck.cards) > 1:
-			self.putCard(self.upDeck.cards[0], 11, 0)
-			self.putCard(self.upDeck.cards[1], 13, 2)
-		elif len(self.upDeck.cards) > 0:
-			self.putCard(self.upDeck.cards[0], 11, 0)
+		if self.cursorY == 0 and self.cursorX == 1:
+			color = Fore.GREEN
 		else:
-			self.putCardBox(11, 0)
+			color = Fore.WHITE
+		if len(self.upDeck.cards) > 2:
+			self.putCard(self.upDeck.cards[-3], 11, 0)
+			self.putCard(self.upDeck.cards[-2], 13, 2)
+			self.putCard(self.upDeck.cards[-1], 15, 4, color)
+		elif len(self.upDeck.cards) > 1:
+			self.putCard(self.upDeck.cards[-2], 11, 0)
+			self.putCard(self.upDeck.cards[-1], 13, 2, color)
+		elif len(self.upDeck.cards) > 0:
+			self.putCard(self.upDeck.cards[0], 11, 0, color)
+		else:
+			self.putCardBox(11, 0, color = color)
 
 		# draw acePiles
 		for pileIndex in range(0,len(self.acePiles)):
-			self.drawPile(30+9*pileIndex,0,self.acePiles[pileIndex], splay = False)
+			if self.cursorY == 0 and self.cursorX == pileIndex + 3:
+				color = Fore.GREEN
+			else:
+				color = Fore.WHITE
+			self.drawPile(30+9*pileIndex,0,self.acePiles[pileIndex], splay = False, color = color)
 
 		# draw cardStacks
 		for pileIndex in range(0,len(self.cardStacks)):
-			self.drawPile(pileIndex * 10,13,self.cardStacks[pileIndex])
+			if self.cursorY == 1 and self.cursorX == pileIndex:
+				color = Fore.GREEN
+			else:
+				color = Fore.WHITE
+			self.drawPile(pileIndex * 10,13,self.cardStacks[pileIndex], color = color)
 
 		# draw message
 		self.putString(self.message,70,2)
+		self.putString('x: '+str(self.cursorX),70,4)
+		self.putString('y: '+str(self.cursorY), 70, 5)
+		self.putString('suby: '+str(self.cursorSubY), 70, 6)
+		self.putString('max: '+str(self.cursorSubMax), 70, 7)
 
 		return self.screenState
 
 
-	def drawPile(self,x:int,y:int,pile:CardStack,splay:bool = True):
+	def drawPile(self,x:int,y:int,pile:CardStack,splay:bool = True, color = Fore.WHITE):
 		if len(pile.cards) > 0:
 			if splay:
 				for thisCard in pile.cards:
@@ -86,16 +108,16 @@ class SolitaireLayout:
 						self.putCardBox(x, y)
 						y += 1
 					else:
-						self.putCard(thisCard, x, y)
+						self.putCard(thisCard, x, y, color = color)
 						y += 3
 			else:
 				self.putCard(pile.cards[-1], x, y)
 		else:
-			self.putCardBox(x, y)
+			self.putCardBox(x, y, color = color)
 
-	def putCard(self,card:Card,x:int,y:int):
+	def putCard(self,card:Card,x:int,y:int, color = Fore.WHITE):
 		# Places the characters representing the given card at top left position x,y
-		self.putCardBox(x, y)
+		self.putCardBox(x, y, color = color)
 		self.putCardSymbols(x, y, symbolFromSuit(card.getSuit()), card.getNumber(),card.getColor())
 		pass
 
@@ -168,7 +190,7 @@ class SolitaireLayout:
 
 	def putChar(self,character:str,x:int,y:int,color:str=Fore.WHITE):
 		# Places the character at the position x,y
-		if len(self.screenState) > x and len(self.screenState[x]) > y:
+		if len(self.screenState) > x and len(self.screenState[x]) > y and len(character) == 1:
 			self.screenState[x][y] = (ord(character),color)
 			return True
 		else:
@@ -188,16 +210,41 @@ class SolitaireLayout:
 
 
 	def rightPressed(self):
-		self.cursorX += 1
+		if self.cursorX < 7:
+			self.cursorX += 1
+			if self.cursorY == 0:
+				if self.cursorX == 2:
+					self.cursorX += 1
+			else:
+				self.setCursorSubY()
 
 
 	def leftPressed(self):
-		self.cursorX -= 1
+		if self.cursorX > 0:
+			self.cursorX -= 1
+			if self.cursorY == 0:
+				if self.cursorX == 2:
+					self.cursorX -= 1
+			else:
+				self.setCursorSubY()
 
 
 	def upPressed(self):
-		self.cursorY -=1
+		if self.cursorY > 0:
+			if self.cursorSubY > 0:
+				self.cursorSubY -= 1
+			else:
+				self.cursorY -= 1
 
 
 	def downPressed(self):
-		self.cursorX += 1
+		if self.cursorY == 0:
+			self.cursorY += 1
+			self.setCursorSubY()
+		elif self.cursorSubY < self.cursorSubMax:
+			self.cursorSubY += 1
+
+
+	def setCursorSubY(self):
+		self.cursorSubMax = self.cardStacks[self.cursorX].getUpCardCount() - 1
+		self.cursorSubY = self.cursorSubMax

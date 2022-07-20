@@ -76,6 +76,13 @@ class CardStack:
 	def checkValidCardPlacement(self,card:Card):
 		return True
 
+	def getUpCardCount(self) -> int:
+		faceUpSum = 0
+		for aCard in self.cards:
+			if not aCard.faceDown:
+				faceUpSum += 1
+		return faceUpSum
+
 
 class AcePile(CardStack):
 	"""Class for the ace piles at the top of the board"""
