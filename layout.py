@@ -15,15 +15,16 @@ class SolitaireLayout:
 		self.screenState = [[]]
 		self.dimX = -1
 		self.dimY = -1
+		self.cursorX = 0
+		self.cursorY = 0
+		self.message = ''
 
 		# Deal cards into seven piles
 		self.cardStacks = [None] * 7
 		for i in range(0,7):
 			poppedCards = self.deck.popX(i + 1)
-			print('poppedCards',len(poppedCards))
 			self.cardStacks[i] = PlayStack(poppedCards)
-			# self.cardStacks[i].flipTop()
-			print(len(self.cardStacks[i].cards))
+			self.cardStacks[i].flipTop()
 
 		# Initialize the ace piles
 		self.acePiles = [None] * 4
@@ -35,6 +36,9 @@ class SolitaireLayout:
 		# Create a character representation intended to print to the screen
 		if dimX != self.dimX or dimY != self.dimY:
 			self.screenState = [[(32,'')] * dimY for i in range(dimX)]
+			self.dimX = dimX
+			self.dimY = dimY
+
 
 		# draw deck
 		if len(self.deck.cards) > 0:
@@ -61,25 +65,31 @@ class SolitaireLayout:
 
 		# draw acePiles
 		for pileIndex in range(0,len(self.acePiles)):
-			self.drawPile(30+9*pileIndex,0,self.acePiles[pileIndex])
+			self.drawPile(30+9*pileIndex,0,self.acePiles[pileIndex], splay = False)
 
 		# draw cardStacks
 		for pileIndex in range(0,len(self.cardStacks)):
 			self.drawPile(pileIndex * 10,13,self.cardStacks[pileIndex])
 
+		# draw message
+		self.putString(self.message,70,2)
+
 		return self.screenState
 
 
-	def drawPile(self,x:int,y:int,pile:CardStack):
+	def drawPile(self,x:int,y:int,pile:CardStack,splay:bool = True):
 		if len(pile.cards) > 0:
-			for thisCard in pile.cards:
-				if thisCard.faceDown:
-					# Each card that is face down beneath other cards is represented by one row of characters
-					self.putCardBox(x, y)
-					y += 1
-				else:
-					self.putCard(thisCard, x, y)
-					y += 3
+			if splay:
+				for thisCard in pile.cards:
+					if thisCard.faceDown:
+						# Each card that is face down beneath other cards is represented by one row of characters
+						self.putCardBox(x, y)
+						y += 1
+					else:
+						self.putCard(thisCard, x, y)
+						y += 3
+			else:
+				self.putCard(pile.cards[-1], x, y)
 		else:
 			self.putCardBox(x, y)
 
@@ -156,10 +166,38 @@ class SolitaireLayout:
 		if num == 13:
 			self.putChar(chr(9815),x + 4, y + 4, Fore.YELLOW)
 
-	def putChar(self,character,x:int,y:int,color:str=Fore.WHITE):
+	def putChar(self,character:str,x:int,y:int,color:str=Fore.WHITE):
 		# Places the character at the position x,y
 		if len(self.screenState) > x and len(self.screenState[x]) > y:
 			self.screenState[x][y] = (ord(character),color)
 			return True
 		else:
 			return False
+
+
+	def putString(self,instr:str,x,y,color:str=Fore.WHITE):
+		# Writes text at the position x,y
+		currentX = x
+		currentY = y
+		for character in instr:
+			self.putChar(character,currentX,currentY,color)
+			currentX += 1
+			if currentX >= self.dimX:
+				currentX = x
+				currentY += 1
+
+
+	def rightPressed(self):
+		self.cursorX += 1
+
+
+	def leftPressed(self):
+		self.cursorX -= 1
+
+
+	def upPressed(self):
+		self.cursorY -=1
+
+
+	def downPressed(self):
+		self.cursorX += 1
