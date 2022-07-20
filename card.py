@@ -2,6 +2,7 @@
 
 from utils import *
 import math
+from colorama import Fore
 
 
 class Card:
@@ -35,9 +36,9 @@ class Card:
 	def getColor(self):
 		suit = self.getSuit()
 		if suit == 'spades' or suit == 'clubs':
-			return 'black'
+			return Fore.WHITE
 		else:
-			return 'red'
+			return Fore.RED
 
 
 class CardStack:
@@ -80,52 +81,56 @@ class AcePile(CardStack):
 	"""Class for the ace piles at the top of the board"""
 
 	def __init__(self,suit:str):
-		self.cardList = None
+		self.cards = None
 		self.suit = suit
 		super().__init__()
 
 	def checkValidCardPlacement(self,card:Card):
 		if card.getSuit() != self.suit:
 			return False
-		if self.cardList.len() == 0:
+		if len(self.cards) == 0:
 			if card.getNumber() == 0:
 				return True
 			else:
 				return False
 		else:
 			# There is at least one card already in this AcePile
-			if card.getNumber == self.cardList[-1].getNumber() + 1:
+			if card.getNumber == self.cards[-1].getNumber() + 1:
 				return True
 			else:
 				return False
-		return False
 
 
 class PlayStack(CardStack):
 	"""Represents one of the seven piles at the bottom of the board"""
 
 	def __init__(self, startingCards: list[Card]):
-		self.cardList = None
+		self.cards = None
 		for card in startingCards:
 			card.flipDown()
-		startingCards[-1].flipUp()
 		super().__init__(startingCards)
+		self.flipTop()
 
 	def checkValidCardPlacement(self,card:Card):
-		if self.cardList.len() == 0:
+		if len(self.cards) == 0:
 			return True
 		else:
 			# There is at least one card already in this CardStack
-			if self.cardList[-1].getColor() == card.getColor():
+			if self.cards[-1].getColor() == card.getColor():
 				return False
 			else:
-				if self.cardList[-1].getNumber() - 1 == card.getNumber():
+				if self.cards[-1].getNumber() - 1 == card.getNumber():
 					return True
 				else:
 					return False
-		return False
 
 	def popX(self,x):
 		super().popX(x)
-		if self.cardList.len() > 0:
-			self.cardList[-1].flipUp()
+		if len(self.cards) > 0:
+			self.cards[-1].flipUp()
+
+	def flipTop(self):
+		# Make sure the top card is face up
+		if len(self.cards) > 0:
+			print(len(self.cards))
+			self.cards[-1].flipUp()
