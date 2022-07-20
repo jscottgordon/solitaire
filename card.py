@@ -51,11 +51,11 @@ class CardStack:
 		else:
 			self.cards = cardList
 
-	def popX(self,x) -> list[Card]:
+	def popX(self,x: int) -> list[Card]:
 		# Remove X cards from the stack, and return those X
-		poppedCards = self.cards[x-1:]
+		poppedCards = self.cards[len(self.cards) - x:]
 		poppedCards.reverse()
-		self.cards = self.cards[:x-1]
+		self.cards = self.cards[:len(self.cards) - x]
 		return poppedCards
 
 	def addCard(self,newCard:Card):
@@ -124,10 +124,11 @@ class PlayStack(CardStack):
 				else:
 					return False
 
-	def popX(self,x):
-		super().popX(x)
+	def popX(self,x:int) -> list[Card]:
+		poppedCards = super().popX(x)
 		if len(self.cards) > 0:
 			self.cards[-1].flipUp()
+		return poppedCards
 
 	def flipTop(self):
 		# Make sure the top card is face up

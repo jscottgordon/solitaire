@@ -19,8 +19,10 @@ class SolitaireLayout:
 		# Deal cards into seven piles
 		self.cardStacks = [None] * 7
 		for i in range(0,7):
-			self.cardStacks[i] = PlayStack(self.deck.popX(i + 1))
-			#self.cardStacks[i].flipTop()
+			poppedCards = self.deck.popX(i + 1)
+			print('poppedCards',len(poppedCards))
+			self.cardStacks[i] = PlayStack(poppedCards)
+			# self.cardStacks[i].flipTop()
 			print(len(self.cardStacks[i].cards))
 
 		# Initialize the ace piles
@@ -35,15 +37,51 @@ class SolitaireLayout:
 			self.screenState = [[(32,'')] * dimY for i in range(dimX)]
 
 		# draw deck
+		if len(self.deck.cards) > 0:
+			self.putCardBox(0, 0, '#')
+			if len(self.deck.cards) > 1:
+				self.putCardBox(0, 1, '#')
+				if len(self.deck.cards) > 2:
+					self.putCardBox(0, 2, '#')
+		else:
+			self.putCardBox(0, 0)
 
 		# draw upDeck
+		if len(self.upDeck.cards) > 2:
+			self.putCard(self.upDeck.cards[0], 11, 0)
+			self.putCard(self.upDeck.cards[1], 13, 2)
+			self.putCard(self.upDeck.cards[2], 15, 4)
+		elif len(self.upDeck.cards) > 1:
+			self.putCard(self.upDeck.cards[0], 11, 0)
+			self.putCard(self.upDeck.cards[1], 13, 2)
+		elif len(self.upDeck.cards) > 0:
+			self.putCard(self.upDeck.cards[0], 11, 0)
+		else:
+			self.putCardBox(11, 0)
 
 		# draw acePiles
+		for pileIndex in range(0,len(self.acePiles)):
+			self.drawPile(30+9*pileIndex,0,self.acePiles[pileIndex])
 
 		# draw cardStacks
+		for pileIndex in range(0,len(self.cardStacks)):
+			self.drawPile(pileIndex * 10,13,self.cardStacks[pileIndex])
 
 		return self.screenState
 
+
+	def drawPile(self,x:int,y:int,pile:CardStack):
+		if len(pile.cards) > 0:
+			for thisCard in pile.cards:
+				if thisCard.faceDown:
+					# Each card that is face down beneath other cards is represented by one row of characters
+					self.putCardBox(x, y)
+					y += 1
+				else:
+					self.putCard(thisCard, x, y)
+					y += 3
+		else:
+			self.putCardBox(x, y)
 
 	def putCard(self,card:Card,x:int,y:int):
 		# Places the characters representing the given card at top left position x,y
@@ -52,22 +90,22 @@ class SolitaireLayout:
 		pass
 
 
-	def putCardBox(self,x:int,y:int,emptySymbol:str = ' '):
+	def putCardBox(self,x:int,y:int,emptySymbol:str = ' ', color=Fore.WHITE):
 		# Places the line around a card at a given top left position x,y
-		self.putChar(chr(9484), x, y)  # Top left corner
-		self.putChar(chr(9492), x, y + 8)  # Bottom left corner
-		self.putChar(chr(9488), x + 8, y)  # Top right corner
-		self.putChar(chr(9496), x + 8, y + 8)  # Bottom right corner
+		self.putChar(chr(9484), x, y, color)  # Top left corner
+		self.putChar(chr(9492), x, y + 8, color)  # Bottom left corner
+		self.putChar(chr(9488), x + 8, y, color)  # Top right corner
+		self.putChar(chr(9496), x + 8, y + 8, color)  # Bottom right corner
 		for i in range(x + 1, x + 8):
 			# Draw top and bottom lines
-			self.putChar(chr(9472), i, y)
-			self.putChar(chr(9472), i, y + 8)
+			self.putChar(chr(9472), i, y, color)
+			self.putChar(chr(9472), i, y + 8, color)
 		for i in range(y + 1, y + 8):
 			# Draw left and right lines
-			self.putChar(chr(9474), x, i)
-			self.putChar(chr(9474), x + 8, i)
+			self.putChar(chr(9474), x, i, color)
+			self.putChar(chr(9474), x + 8, i, color)
 			for j in range(x + 1, x + 8):
-				self.putChar(emptySymbol, j, i)
+				self.putChar(emptySymbol, j, i, color)
 
 
 	def putCardSymbols(self,x:int,y:int,symbol:str,num:int,color=Fore.WHITE):
