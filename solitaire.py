@@ -21,7 +21,6 @@ def main():
 
     # Set up new Solitaire game layout
     gameLayout = SolitaireLayout(deckList)
-    gameLayout.message = "Use the arrow keys to move your selection, space to select, and escape to exit selection.  Press Esc to exit."
     refreshScreen()
     with keyboard.Listener(on_press=keyPress, on_release=keyRelease) as listener:
         listener.join()
@@ -37,17 +36,21 @@ def refreshScreen():
 
 def keyPress(key):
     if key == keyboard.Key.right:
-        gameLayout.rightPressed()
+        gameLayout.moveRight()
     elif key == keyboard.Key.left:
-        gameLayout.leftPressed()
+        gameLayout.moveLeft()
     elif key == keyboard.Key.up:
-        gameLayout.upPressed()
+        gameLayout.moveUp()
     elif key == keyboard.Key.down:
-        gameLayout.downPressed()
+        gameLayout.moveDown()
+    elif key == keyboard.Key.space:
+        gameLayout.spaceAction()
+    elif key == keyboard.Key.esc:
+        gameLayout.removeSelection()
     refreshScreen()
 
 def keyRelease(key):
-    if key == keyboard.Key.esc:
+    if isinstance(key,keyboard.KeyCode) and key.char == 'q':
         return False
 
 
