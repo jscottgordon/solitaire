@@ -40,24 +40,26 @@ class SolitaireLayout:
 
 
 	def getScreenState(self, dimX:int, dimY:int) -> list[list[int]]:
+		"""Generates a 2D array of characters representing the desired terminal screen"""
+
 		# Create a character representation intended to print to the screen
+		# self.screenState should be an array of arrays,
+		# where each component of the inner array is tuple (charCode: int, color: str)
 		if dimX != self.dimX or dimY != self.dimY:
+			# If the terminal window is resized, regenerate the screenState array based on the new dimensions
 			self.screenState = [[(32, '')] * dimY for _ in range(dimX)]
 			self.dimX = dimX
 			self.dimY = dimY
 		else:
-			# Revert screen matrix to blank
+			# We know the terminal was not resized, so revert the existing matrix to blank spaces
 			for col in self.screenState:
-				for cellIndex in range(0,len(col)):
-					col[cellIndex] = (32,'')
+				for cellIndex in range(0, len(col)):
+					col[cellIndex] = (32, '')
 
-		# draw deck
-		if self.cursorY == 0 and self.cursorX == 0:
-			color = Fore.GREEN
-		elif self.selectionCoordinates[1] == 0 and self.selectionCoordinates[0] == 0:
-			color = Fore.BLUE
-		else:
-			color = Fore.WHITE
+		# Now, draw all components of the solitaire screen:
+
+		# First, draw the deck in the top left corner
+		color = determineSelectionColor(0, 0)
 		if len(self.deck.cards) > 0:
 			self.putCardBox(0, 0, '#', color)
 			if len(self.deck.cards) > 1:
@@ -68,12 +70,7 @@ class SolitaireLayout:
 			self.putCardBox(0, 0, color = color)
 
 		# draw upDeck
-		if self.cursorY == 0 and self.cursorX == 1:
-			color = Fore.GREEN
-		elif self.selectionCoordinates[1] == 0 and self.selectionCoordinates[0] == 1:
-			color = Fore.BLUE
-		else:
-			color = Fore.WHITE
+		color = determineSelectionColor(1, 0)
 		if len(self.upDeck.cards) > 2:
 			self.putCard(self.upDeck.cards[-3], 11, 0)
 			self.putCard(self.upDeck.cards[-2], 13, 2)
@@ -88,43 +85,34 @@ class SolitaireLayout:
 
 		# draw acePiles
 		for pileIndex in range(0,len(self.acePiles)):
-			if self.cursorY == 0 and self.cursorX == pileIndex + 3:
-				color = Fore.GREEN
-			elif self.selectionCoordinates[1] == 0 and self.selectionCoordinates[0] == pileIndex + 3:
-				color = Fore.BLUE
-			else:
-				color = Fore.WHITE
+			color = determineSelectionColor(pileIndex + 3, 0)
 			self.drawPile(30+9*pileIndex,0,self.acePiles[pileIndex], splay = False, color = color)
 			if len(self.acePiles[pileIndex].cards) == 0:
 				self.putChar(symbolFromSuit(suitFromNumber(pileIndex)), 34+9*pileIndex, 4, color = color)
 
 		# draw cardStacks
 		for pileIndex in range(0,len(self.cardStacks)):
-			if self.cursorY == 1 and self.cursorX == pileIndex:
-				color = Fore.GREEN
-			elif self.selectionCoordinates[1] == 1 and self.selectionCoordinates[0] == pileIndex:
-				color = Fore.BLUE
-			else:
-				color = Fore.WHITE
+			color = determineSelectionColor(pileIndex, 0)
 			self.drawPile(pileIndex * 10, 13, self.cardStacks[pileIndex], color = color, colorDepth = self.cursorSubY)
 
 		# draw message
 		self.putString(self.message, 70, 2)
-		self.putString('x: '+str(self.cursorX), 70, 4)
-		self.putString('y: '+str(self.cursorY), 70, 5)
-		self.putString('suby: '+str(self.cursorSubY), 70, 6)
-		self.putString('max: '+str(self.cursorSubMax), 70, 7)
-		self.putString('sel: '+str(self.selectionCoordinates), 70, 8)
-		self.putString('depth: '+str(self.selectionDepth), 70, 9)
-		if self.selectionCard is None:
-			self.putString('card: None', 70, 10)
-		else:
-			self.putString('card: '+str(self.selectionCard.getIndex())+' '+cardNumToChar(self.selectionCard.getNumber())+symbolFromSuit(self.selectionCard.getSuit()),70,10)
 
 		return self.screenState
 
+	def determineSelectionColor(self,x:int,y:int):
+		"""Figure out if the cursor or selection is pointing to the location (x,y),
+		and return the appropriate highlight color"""
+		if self.cursorX == x and self.cursorY == y:
+			return Fore.GREEN
+		elif self.selectionCoordinates[0] == x and self.selectionCoordinates[1] == y:
+			return Fore.BLUE
+		else:
+			return Fore.WHITE
 
-	def drawPile(self,x:int,y:int,pile:CardStack,splay:bool = True, color = Fore.WHITE, colorDepth = 1):
+
+	def drawPile(self,x:int, y:int, pile:CardStack, splay:bool = True, color = Fore.WHITE, colorDepth = 1):
+		"""Draw the cards on the screen at (x,y) from the passed CardStack object."""
 		if len(pile.cards) > 0:
 			if splay:
 				faceUpCardCount = 0
@@ -147,14 +135,14 @@ class SolitaireLayout:
 			self.putCardBox(x, y, color = color)
 
 	def putCard(self,card:Card,x:int,y:int, color = Fore.WHITE):
-		# Places the characters representing the given card at top left position x,y
+		"""Places the characters representing the given card at top left position x,y"""
 		self.putCardBox(x, y, color = color)
 		self.putCardSymbols(x, y, symbolFromSuit(card.getSuit()), card.getNumber(),card.getColor())
 		pass
 
 
 	def putCardBox(self,x:int,y:int,emptySymbol:str = ' ', color=Fore.WHITE):
-		# Places the line around a card at a given top left position x,y
+		"""Places a border line around a card at a given top left position x,y"""
 		self.putChar(chr(9484), x, y, color)  # Top left corner
 		self.putChar(chr(9492), x, y + 8, color)  # Bottom left corner
 		self.putChar(chr(9488), x + 8, y, color)  # Top right corner
@@ -172,6 +160,7 @@ class SolitaireLayout:
 
 
 	def putCardSymbols(self,x:int,y:int,symbol:str,num:int,color=Fore.WHITE):
+		"""Draws the suit symbols on a card, where the location of the symbols depends on the card number"""
 		numberSymbol = cardNumToChar(num)
 		# First, draw upper and lower corner card symbols
 		if num==10:
@@ -219,8 +208,9 @@ class SolitaireLayout:
 		if num == 13:
 			self.putChar(chr(9815),x + 4, y + 4, Fore.YELLOW)
 
+
 	def putChar(self,character:str,x:int,y:int,color:str=Fore.WHITE):
-		# Places the character at the position x,y
+		"""Draw the character at the position x,y"""
 		if len(self.screenState) > x and len(self.screenState[x]) > y and len(character) == 1:
 			self.screenState[x][y] = (ord(character),color)
 			return True
@@ -229,7 +219,7 @@ class SolitaireLayout:
 
 
 	def putString(self,instr:str,x,y,color:str=Fore.WHITE):
-		# Writes text at the position x,y
+		"""Writes text at the position x,y on the screen"""
 		currentX = x
 		currentY = y
 		for character in instr:
@@ -241,6 +231,7 @@ class SolitaireLayout:
 
 
 	def moveRight(self):
+		"""Moves the cursor right"""
 		if self.cursorX < 6:
 			self.cursorX += 1
 			if self.cursorY == 0:
@@ -251,6 +242,7 @@ class SolitaireLayout:
 
 
 	def moveLeft(self):
+		"""Moves the cursor left"""
 		if self.cursorX > 0:
 			self.cursorX -= 1
 			if self.cursorY == 0:
@@ -261,6 +253,7 @@ class SolitaireLayout:
 
 
 	def moveUp(self):
+		"""Moves the cursor up"""
 		if self.cursorY > 0:
 			if self.cursorSubY > 0:
 				self.cursorSubY -= 1
@@ -271,6 +264,7 @@ class SolitaireLayout:
 
 
 	def moveDown(self):
+		"""Moves the cursor down"""
 		if self.cursorY == 0:
 			self.cursorY += 1
 			self.setCursorSubY()
@@ -279,6 +273,7 @@ class SolitaireLayout:
 
 
 	def spaceAction(self):
+		"""Makes or applies selection, depending on cursor position"""
 		if self.selectionCoordinates[0] == -1:
 			self.makeSelection()
 		elif self.cursorX == self.selectionCoordinates[0] and self.cursorY == self.selectionCoordinates[1]:
@@ -287,8 +282,8 @@ class SolitaireLayout:
 			self.applySelection()
 
 
-
 	def makeSelection(self):
+		"""Selects the current card, or flips the deck if the deck is targeted"""
 		if self.cursorY == 0:
 			if self.cursorX == 0:
 				# Flip deck over
@@ -316,31 +311,24 @@ class SolitaireLayout:
 		if len(self.selectionSourceStack.cards) == 0:
 			self.removeSelection()
 			return False
-		try:
-			self.selectionCoordinates = (self.cursorX, self.cursorY, self.cursorSubY)
-			self.selectionCard = self.selectionSourceStack.cards[-self.selectionDepth]
-		except:
-			print(self.selectionDepth)
-			raise Exception("A")
+		self.selectionCoordinates = (self.cursorX, self.cursorY, self.cursorSubY)
+		self.selectionCard = self.selectionSourceStack.cards[-self.selectionDepth]
 		return True
 
 
 	def applySelection(self) -> bool:
+		"""Attemps to move cards based on the current selection to the current cursor position"""
 		checkForWin = False
 		if self.selectionCard is None:
-			self.message = "No card currently selected."
 			return False
 		if self.cursorY == 0:
 			if self.cursorX <= 2:
-				self.message = "Cannot place a card on the draw deck."
 				return False
 			else:
 				# Attepting to place a card on an ace pile.
 				if self.selectionDepth != 1:
-					self.message = "Cannot place multiple cards on an ace pile."
 					return False
 				if self.selectionCard.getSuit() != suitFromNumber(self.cursorX - 3):
-					self.message = "Suit does not match ace pile suit. "+str(self.selectionCard.getSuit())+' '+str(suitFromNumber(self.cursorX - 3))
 					return False
 				targetCardstack = self.acePiles[self.cursorX - 3]
 				checkForWin = True
@@ -348,7 +336,6 @@ class SolitaireLayout:
 			# Attempting to place a card on another card stack.
 			targetCardstack = self.cardStacks[self.cursorX]
 		if not targetCardstack.checkValidCardPlacement(self.selectionCard):
-			self.message = "Failed checkValidCardPlacement"
 			return False
 		# If the function has not retunred above, assume that applying the selection is valid:
 
@@ -363,6 +350,7 @@ class SolitaireLayout:
 
 
 	def getWinState(self):
+		"""Checks to see if the game is currently won"""
 		for acePile in self.acePiles:
 			if len(acePile.cards) != 13:
 				return False
@@ -371,6 +359,7 @@ class SolitaireLayout:
 
 
 	def removeSelection(self):
+		"""Resets the current selection"""
 		self.selectionCoordinates = (-1, -1, -1)
 		self.selectionSourceStack = None
 		self.selectionDepth = 0
@@ -378,5 +367,6 @@ class SolitaireLayout:
 
 
 	def setCursorSubY(self):
+		"""Used for moving the cursor up or down the card stack"""
 		self.cursorSubMax = self.cardStacks[self.cursorX].getUpCardCount() - 1
 		self.cursorSubY = self.cursorSubMax

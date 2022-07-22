@@ -11,7 +11,6 @@ from card import Card
 
 global gameLayout
 
-
 def main():
     global gameLayout
     # Initialize deck of cards in order, then randomly shuffle
@@ -27,6 +26,8 @@ def main():
         listener.join()
 
 def refreshScreen():
+    """Reprint the screen, fill the whole terminal window with characters from a 2D array from getScreenState"""
+
     if sys.platform == "win32" and os.environ.get("WT_SESSION"):
         os.system('cls')
     else:
@@ -39,6 +40,8 @@ def refreshScreen():
         print('\n', end='')
 
 def keyPress(key):
+    """Used to detect relevant keyboard key presses and pass them down into the gameLayout"""
+
     if key == keyboard.Key.right:
         gameLayout.moveRight()
     elif key == keyboard.Key.left:
@@ -57,6 +60,8 @@ def keyPress(key):
         return False
 
 def keyRelease(key):
+    """Used for detecting the quit key: Q"""
+
     if isinstance(key, keyboard.KeyCode) and key.char == 'q':
         return False
 
