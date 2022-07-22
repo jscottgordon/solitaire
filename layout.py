@@ -94,6 +94,8 @@ class SolitaireLayout:
 			else:
 				color = Fore.WHITE
 			self.drawPile(30+9*pileIndex,0,self.acePiles[pileIndex], splay = False, color = color)
+			if len(self.acePiles[pileIndex].cards) == 0:
+				self.putChar(symbolFromSuit(suitFromNumber(pileIndex)),34+9*pileIndex,4, color = color)
 
 		# draw cardStacks
 		for pileIndex in range(0,len(self.cardStacks)):
@@ -103,7 +105,7 @@ class SolitaireLayout:
 				color = Fore.BLUE
 			else:
 				color = Fore.WHITE
-			self.drawPile(pileIndex * 10,13,self.cardStacks[pileIndex], color = color)
+			self.drawPile(pileIndex * 10,13,self.cardStacks[pileIndex], color = color, colorDepth = self.cursorSubY)
 
 		# draw message
 		self.putString(self.message,70,2)
@@ -121,19 +123,25 @@ class SolitaireLayout:
 		return self.screenState
 
 
-	def drawPile(self,x:int,y:int,pile:CardStack,splay:bool = True, color = Fore.WHITE):
+	def drawPile(self,x:int,y:int,pile:CardStack,splay:bool = True, color = Fore.WHITE, colorDepth = 1):
 		if len(pile.cards) > 0:
 			if splay:
+				faceUpCardCount = 0
 				for thisCard in pile.cards:
 					if thisCard.faceDown:
 						# Each card that is face down beneath other cards is represented by one row of characters
 						self.putCardBox(x, y)
 						y += 1
 					else:
-						self.putCard(thisCard, x, y, color = color)
+						if faceUpCardCount >= colorDepth:
+							colorToPass = color
+						else:
+							colorToPass = Fore.WHITE
+						self.putCard(thisCard, x, y, color = colorToPass)
 						y += 3
+						faceUpCardCount += 1
 			else:
-				self.putCard(pile.cards[-1], x, y)
+				self.putCard(pile.cards[-1], x, y, color = color)
 		else:
 			self.putCardBox(x, y, color = color)
 
@@ -328,33 +336,39 @@ class SolitaireLayout:
 				if self.selectionDepth != 1:
 					self.message = "Cannot place multiple cards on an ace pile."
 					return False
-				if self.selectionCard.getSuit() != suitFromNumber(self.cursorX - 2):
-					self.message = "Suit does not match ace pile suit."
+				if self.selectionCard.getSuit() != suitFromNumber(self.cursorX - 3):
+					self.message = "Suit does not match ace pile suit. "+str(self.selectionCard.getSuit())+' '+str(suitFromNumber(self.cursorX - 3))
 					return False
-				targetCardstack = self.acePiles[self.cursorX - 2]
-				if len(targetCardstack.cards) == 0:
-					if self.selectionCard.getNumber() != 1:
-						self.message = "Must start with an ace."
-						return False
-				else:
-					if self.selectionCard.getNumber() != targetCardstack.cards[-1].getNumber() + 1:
-						self.message = "Card number is not correct."
-						return False
+				targetCardstack = self.acePiles[self.cursorX - 3]
+
+				#if len(targetCardstack.cards) == 0:
+				#	if self.selectionCard.getNumber() != 1:
+				#		self.message = "Must start with an ace."
+				#		return False
+				#else:
+				#	if self.selectionCard.getNumber() != targetCardstack.cards[-1].getNumber() + 1:
+				#		self.message = "Card number is not correct."
+				#		return False
 		else:
 			# Attempting to place a card on another card stack.
 			targetCardstack = self.cardStacks[self.cursorX]
-			if len(targetCardstack.cards) > 0:
-				denominatorCard = targetCardstack.cards[-1]
-				if denominatorCard.getColor() == self.selectionCard.getColor():
-					self.message = "Color mismatch. "+str(denominatorCard.getColor()) + str(self.selectionCard.getColor())
-					return False
-				if denominatorCard.getNumber() - 1 != self.selectionCard.getNumber():
-					self.message = "Card number is not correct. (2) "+ str(denominatorCard.getNumber()) + ','+str(self.selectionCard.getNumber())
-					return False
+			#if len(targetCardstack.cards) > 0:
+			#	denominatorCard = targetCardstack.cards[-1]
+			#	if denominatorCard.getColor() == self.selectionCard.getColor():
+			#		self.message = "Color mismatch. "+str(denominatorCard.getColor()) + str(self.selectionCard.getColor())
+			#		return False
+			#	if denominatorCard.getNumber() - 1 != self.selectionCard.getNumber():
+			#		self.message = "Card number is not correct. (2) "+ str(denominatorCard.getNumber()) + ','+str(self.selectionCard.getNumber())
+			#		return False
+		if not targetCardstack.checkValidCardPlacement(self.selectionCard):
+			self.message = "Failed checkValidCardPlacement"
+			return False
 		# If the function has not retunred above, assume that applying the selection is valid:
 
-		poppedCards = self.selectionSourceStack.popX(self.selectionDepth)
-		targetCardstack.addCards(poppedCards)
+		poppedCards = self.selectionSourceStack.popX(self.selectionDepth, invert = False)
+		print(poppedCards)
+		print(targetCardstack.addCards(poppedCards))
+		print(str(len(targetCardstack.cards)))
 		self.removeSelection()
 		return True
 

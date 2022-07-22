@@ -51,10 +51,11 @@ class CardStack:
 		else:
 			self.cards = cardList
 
-	def popX(self,x: int) -> list[Card]:
+	def popX(self,x: int, invert: bool = True) -> list[Card]:
 		# Remove X cards from the stack, and return those X
 		poppedCards = self.cards[len(self.cards) - x:]
-		poppedCards.reverse()
+		if invert:
+			poppedCards.reverse()
 		self.cards = self.cards[:len(self.cards) - x]
 		return poppedCards
 
@@ -94,17 +95,20 @@ class AcePile(CardStack):
 
 	def checkValidCardPlacement(self,card:Card):
 		if card.getSuit() != self.suit:
+			print(card.getSuit(),self.suit)
 			return False
 		if len(self.cards) == 0:
-			if card.getNumber() == 0:
+			if card.getNumber() == 1:
 				return True
 			else:
+				print(card.getNumber(), 1)
 				return False
 		else:
 			# There is at least one card already in this AcePile
-			if card.getNumber == self.cards[-1].getNumber() + 1:
+			if card.getNumber() == self.cards[-1].getNumber() + 1:
 				return True
 			else:
+				print(card.getNumber(), self.cards[-1].getNumber() + 1)
 				return False
 
 
@@ -131,8 +135,8 @@ class PlayStack(CardStack):
 				else:
 					return False
 
-	def popX(self,x:int) -> list[Card]:
-		poppedCards = super().popX(x)
+	def popX(self,x:int, invert: bool = True) -> list[Card]:
+		poppedCards = super().popX(x, invert)
 		if len(self.cards) > 0:
 			self.cards[-1].flipUp()
 		return poppedCards
