@@ -24,6 +24,7 @@ class SolitaireLayout:
 		self.selectionDepth = 0
 		self.selectionCard = None
 		self.message = "Use the arrow keys to move your selection, space to select, and escape to exit selection.  Press Q to exit."
+		self.winState = False
 
 		# Deal cards into seven piles
 		self.cardStacks = [None] * 7
@@ -38,10 +39,10 @@ class SolitaireLayout:
 			self.acePiles[i] = AcePile(suitFromNumber(i))
 
 
-	def getScreenState(self,dimX:int,dimY:int) -> list[list[int]]:
+	def getScreenState(self, dimX:int, dimY:int) -> list[list[int]]:
 		# Create a character representation intended to print to the screen
 		if dimX != self.dimX or dimY != self.dimY:
-			self.screenState = [[(32,'')] * dimY for _ in range(dimX)]
+			self.screenState = [[(32, '')] * dimY for _ in range(dimX)]
 			self.dimX = dimX
 			self.dimY = dimY
 		else:
@@ -95,7 +96,7 @@ class SolitaireLayout:
 				color = Fore.WHITE
 			self.drawPile(30+9*pileIndex,0,self.acePiles[pileIndex], splay = False, color = color)
 			if len(self.acePiles[pileIndex].cards) == 0:
-				self.putChar(symbolFromSuit(suitFromNumber(pileIndex)),34+9*pileIndex,4, color = color)
+				self.putChar(symbolFromSuit(suitFromNumber(pileIndex)), 34+9*pileIndex, 4, color = color)
 
 		# draw cardStacks
 		for pileIndex in range(0,len(self.cardStacks)):
@@ -105,16 +106,16 @@ class SolitaireLayout:
 				color = Fore.BLUE
 			else:
 				color = Fore.WHITE
-			self.drawPile(pileIndex * 10,13,self.cardStacks[pileIndex], color = color, colorDepth = self.cursorSubY)
+			self.drawPile(pileIndex * 10, 13, self.cardStacks[pileIndex], color = color, colorDepth = self.cursorSubY)
 
 		# draw message
-		self.putString(self.message,70,2)
-		self.putString('x: '+str(self.cursorX),70,4)
+		self.putString(self.message, 70, 2)
+		self.putString('x: '+str(self.cursorX), 70, 4)
 		self.putString('y: '+str(self.cursorY), 70, 5)
 		self.putString('suby: '+str(self.cursorSubY), 70, 6)
 		self.putString('max: '+str(self.cursorSubMax), 70, 7)
-		self.putString('sel: '+str(self.selectionCoordinates),70,8)
-		self.putString('depth: '+str(self.selectionDepth),70,9)
+		self.putString('sel: '+str(self.selectionCoordinates), 70, 8)
+		self.putString('depth: '+str(self.selectionDepth), 70, 9)
 		if self.selectionCard is None:
 			self.putString('card: None', 70, 10)
 		else:
@@ -286,6 +287,7 @@ class SolitaireLayout:
 			self.applySelection()
 
 
+
 	def makeSelection(self):
 		if self.cursorY == 0:
 			if self.cursorX == 0:
@@ -324,6 +326,7 @@ class SolitaireLayout:
 
 
 	def applySelection(self) -> bool:
+		checkForWin = False
 		if self.selectionCard is None:
 			self.message = "No card currently selected."
 			return False
@@ -340,26 +343,10 @@ class SolitaireLayout:
 					self.message = "Suit does not match ace pile suit. "+str(self.selectionCard.getSuit())+' '+str(suitFromNumber(self.cursorX - 3))
 					return False
 				targetCardstack = self.acePiles[self.cursorX - 3]
-
-				#if len(targetCardstack.cards) == 0:
-				#	if self.selectionCard.getNumber() != 1:
-				#		self.message = "Must start with an ace."
-				#		return False
-				#else:
-				#	if self.selectionCard.getNumber() != targetCardstack.cards[-1].getNumber() + 1:
-				#		self.message = "Card number is not correct."
-				#		return False
+				checkForWin = True
 		else:
 			# Attempting to place a card on another card stack.
 			targetCardstack = self.cardStacks[self.cursorX]
-			#if len(targetCardstack.cards) > 0:
-			#	denominatorCard = targetCardstack.cards[-1]
-			#	if denominatorCard.getColor() == self.selectionCard.getColor():
-			#		self.message = "Color mismatch. "+str(denominatorCard.getColor()) + str(self.selectionCard.getColor())
-			#		return False
-			#	if denominatorCard.getNumber() - 1 != self.selectionCard.getNumber():
-			#		self.message = "Card number is not correct. (2) "+ str(denominatorCard.getNumber()) + ','+str(self.selectionCard.getNumber())
-			#		return False
 		if not targetCardstack.checkValidCardPlacement(self.selectionCard):
 			self.message = "Failed checkValidCardPlacement"
 			return False
@@ -370,6 +357,16 @@ class SolitaireLayout:
 		print(targetCardstack.addCards(poppedCards))
 		print(str(len(targetCardstack.cards)))
 		self.removeSelection()
+		if checkForWin:
+			self.getWinState()
+		return True
+
+
+	def getWinState(self):
+		for acePile in self.acePiles:
+			if len(acePile.cards) != 13:
+				return False
+		self.winState = True
 		return True
 
 

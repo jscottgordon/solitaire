@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+import sys
 import random
 import math
 from pynput import keyboard
@@ -26,13 +27,16 @@ def main():
         listener.join()
 
 def refreshScreen():
-    os.system('cls||clear')
+    if sys.platform == "win32" and os.environ.get("WT_SESSION"):
+        os.system('cls')
+    else:
+        os.system('clear')
     tsize = os.get_terminal_size()
     outchars = gameLayout.getScreenState(tsize.columns, tsize.lines - 1)
     for y in range(0, len(outchars[0])):
         for x in range(0,len(outchars)):
-            print(outchars[x][y][1]+chr(outchars[x][y][0]),end='')  # [1] represents the color, [0] is the character
-        print('\n',end='')
+            print(outchars[x][y][1]+chr(outchars[x][y][0]), end='')  # [1] represents the color, [0] is the character
+        print('\n', end='')
 
 def keyPress(key):
     if key == keyboard.Key.right:
@@ -48,9 +52,12 @@ def keyPress(key):
     elif key == keyboard.Key.esc:
         gameLayout.removeSelection()
     refreshScreen()
+    if gameLayout.winState:
+        print("Game won!")
+        return False
 
 def keyRelease(key):
-    if isinstance(key,keyboard.KeyCode) and key.char == 'q':
+    if isinstance(key, keyboard.KeyCode) and key.char == 'q':
         return False
 
 
